@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Berlin Ramadan Iftar Map</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; }
+    .leaflet-popup-content { margin: 12px 14px; line-height: 1.6; }
+    .leaflet-popup-close-button { font-size: 24px !important; width: 36px !important; height: 36px !important; padding: 6px !important; }
+    .leaflet-popup-content a { padding: 8px 12px; display: inline-block; margin-top: 4px; background: #ecfdf5; border-radius: 6px; text-decoration: none; }
+    @media (pointer: coarse) { .leaflet-popup-close-button { width: 44px !important; height: 44px !important; } }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <header class="bg-emerald-700 text-white py-4 px-6 shadow-lg">
+    <div class="max-w-4xl mx-auto flex justify-between items-center flex-wrap gap-2">
+      <h1 class="text-xl md:text-2xl font-bold">Berlin Ramadan Iftar Map</h1>
+      <p class="text-sm text-emerald-100">Data Last Updated: <span id="lastUpdated">Loading...</span></p>
+    </div>
+  </header>
+
+  <main class="flex-1 relative">
+    <div id="map" class="h-[calc(100vh-120px)] md:h-[calc(100vh-80px)]"></div>
+    <div class="absolute top-4 left-4 right-4 md:left-auto md:right-4 md:w-64 z-[1000] bg-white rounded-lg shadow-lg p-3 space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">I am in</label>
+        <select id="bezirkSelect" onchange="zoomToBezirk(this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
+          <option value="">Select area...</option>
+          <option value="52.50,13.28">Charlottenburg-Wilmersdorf</option>
+          <option value="52.50,13.45">Friedrichshain-Kreuzberg</option>
+          <option value="52.52,13.48">Lichtenberg</option>
+          <option value="52.54,13.20">Spandau</option>
+          <option value="52.53,13.38">Mitte</option>
+          <option value="52.48,13.43">Neukölln</option>
+          <option value="52.57,13.40">Pankow</option>
+          <option value="52.43,13.25">Steglitz-Zehlendorf</option>
+          <option value="52.59,13.33">Reinickendorf</option>
+          <option value="52.48,13.35">Tempelhof-Schöneberg</option>
+          <option value="52.52,13.37">Tiergarten</option>
+          <option value="52.52,13.31">Charlottenburg</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Select Mosque</label>
+        <select id="mosqueSelect" onchange="zoomToMosque(this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
+          <option value="">All mosques...</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Day</label>
+        <select id="dayFilter" onchange="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
+          <option value="">All days</option>
+          <option value="Daily">Daily</option>
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+          <option value="Saturday">Saturday</option>
+          <option value="Sunday">Sunday</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Cuisine</label>
+        <select id="cuisineFilter" onchange="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
+          <option value="">All cuisines</option>
+        </select>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-gray-800 text-gray-300 py-3 px-6">
+    <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm flex-wrap gap-2 text-center md:text-left">
+      <p>Tap a pin to see iftar details</p>
+      <p>Made with ❤️ in Berlin by Imaad Mohamed Khan and AI 🤖</p>
+      <a href="https://forms.gle/kzLKXBWPFdQGiAwWA" target="_blank" class="text-emerald-400 hover:text-emerald-300 underline">Contribute a location</a>
+    </div>
+  </footer>
+
+  <script>
+    // === CONFIGURATION ===
+    // Replace with your Google Sheet published CSV URL
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSpj8sE_TOdNRibQy6GC_38PnRpssweoqykUELUo4JyrvCni8K6iuZlp_FFvwyU3bfG26Hv7s8lQWgW/pub?output=csv';
+
+    const map = L.map('map').setView([52.52, 13.405], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const mosqueIcon = L.divIcon({
+      className: 'custom-marker',
+      html: '<div class="w-10 h-10 md:w-8 md:h-8 bg-emerald-600 rounded-full border-2 border-white shadow-lg flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></div>',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
+    });
+
+    let allMosques = [];
+    const markerGroup = L.layerGroup().addTo(map);
+
+    function createPopupContent(mosque) {
+      const mapsLink = mosque.googleMapsUrl ? 
+        `<p><span class="font-semibold">📍 Google Maps:</span> <a href="${mosque.googleMapsUrl}" target="_blank" class="text-emerald-600 underline hover:text-emerald-800">Open in Maps</a></p>` : '';
+
+      return `
+        <div class="p-3 min-w-[220px] md:min-w-[200px]">
+          <h3 class="font-bold text-lg text-emerald-800 mb-2">${mosque.name}</h3>
+          <div class="space-y-2 text-sm md:text-base">
+            <p><span class="font-semibold">📅 Iftar Days:</span> ${mosque.days}</p>
+            <p><span class="font-semibold">🍽️ Cuisine:</span> ${mosque.cuisine}</p>
+            <p><span class="font-semibold">🍲 Typical Food:</span> ${mosque.food}</p>
+            ${mapsLink}
+          </div>
+        </div>
+      `;
+    }
+
+    function populateCuisineFilter() {
+      const cuisines = [...new Set(allMosques.map(m => m.cuisine).filter(c => c))].sort();
+      const select = document.getElementById('cuisineFilter');
+      cuisines.forEach(cuisine => {
+        const option = document.createElement('option');
+        option.value = cuisine;
+        option.textContent = cuisine;
+        select.appendChild(option);
+      });
+    }
+
+    function populateMosqueFilter() {
+      const select = document.getElementById('mosqueSelect');
+      allMosques
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(mosque => {
+          const option = document.createElement('option');
+          option.value = `${mosque.lat},${mosque.lng}`;
+          option.textContent = mosque.name;
+          select.appendChild(option);
+        });
+    }
+
+    function zoomToMosque(value) {
+      if (!value) return;
+      const [lat, lng] = value.split(',').map(Number);
+      map.setView([lat, lng], 16);
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const dayFilter = document.getElementById('dayFilter').value;
+      const cuisineFilter = document.getElementById('cuisineFilter').value;
+
+      markerGroup.clearLayers();
+
+      const filtered = allMosques.filter(mosque => {
+        const dayMatch = !dayFilter || 
+          mosque.days.toLowerCase().includes(dayFilter.toLowerCase()) || 
+          mosque.days.toLowerCase() === 'daily';
+        const cuisineMatch = !cuisineFilter || mosque.cuisine === cuisineFilter;
+        return dayMatch && cuisineMatch;
+      });
+
+      filtered.forEach(mosque => {
+        L.marker([mosque.lat, mosque.lng], { icon: mosqueIcon })
+          .addTo(markerGroup)
+          .bindPopup(createPopupContent(mosque));
+      });
+    }
+
+    function zoomToBezirk(value) {
+      if (!value) return;
+      const [lat, lng] = value.split(',').map(Number);
+      map.setView([lat, lng], 14);
+    }
+
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') { inQuotes = !inQuotes; }
+        else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+        else { current += char; }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    async function loadMosqueData() {
+      if (CSV_URL === 'YOUR_GOOGLE_SHEET_CSV_URL_HERE') {
+        document.getElementById('lastUpdated').textContent = 'Setup needed';
+        return;
+      }
+
+      try {
+        const response = await fetch(CSV_URL + '&t=' + Date.now());
+        const text = await response.text();
+        const lines = text.trim().split('\n');
+
+        allMosques = [];
+        let latestDate = null;
+
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCSVLine(lines[i]);
+          if (values.length >= 8 && values[7]) {
+            const dateStr = values[7].trim();
+            const parts = dateStr.split(/[\/\-]/);
+            let rowDate;
+            if (parts.length === 3) {
+              rowDate = new Date(parts[2], parts[1] - 1, parts[0]);
+            } else {
+              rowDate = new Date(dateStr);
+            }
+            if (!isNaN(rowDate) && (!latestDate || rowDate > latestDate)) {
+              latestDate = rowDate;
+            }
+          }
+          if (values.length >= 7 && values[1] && values[2]) {
+            const mosque = {
+              name: values[0] || '',
+              lat: parseFloat(values[1]) || 0,
+              lng: parseFloat(values[2]) || 0,
+              days: values[3] || '',
+              cuisine: values[4] || '',
+              food: values[5] || '',
+              googleMapsUrl: values[6] || ''
+            };
+            allMosques.push(mosque);
+          }
+        }
+
+        document.getElementById('lastUpdated').textContent = latestDate && !isNaN(latestDate) 
+          ? latestDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+          : new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        populateCuisineFilter();
+        populateMosqueFilter();
+        applyFilters();
+      } catch (e) {
+        console.error('Error loading data:', e);
+        document.getElementById('lastUpdated').textContent = 'Error loading data';
+      }
+    }
+
+    loadMosqueData();
+  </script>
+</body>
+</html>
