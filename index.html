@@ -3,7 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Berlin Ramadan Iftar Map</title>
+  <title>Berlin Iftar Project | Find Iftar Locations in Berlin</title>
+  <meta name="description" content="Discover iftar spots across Berlin during Ramadan. Community-contributed map showing mosques offering free iftar meals. Filter by day, cuisine, and location.">
+  <meta name="keywords" content="Ramadan iftar Berlin, mosque iftar Berlin, free iftar Berlin, Ramadan 2026 Berlin, fast breaking spots Berlin, Islamic community Berlin">
+  <meta name="author" content="Imaad Mohamed Khan">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="Berlin Iftar Project | Find Iftar Locations in Berlin">
+  <meta property="og:description" content="Discover iftar spots across Berlin during Ramadan. Community-contributed map showing mosques offering free iftar meals.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://imaadkhan.com/berlin-ramadan-iftar/">
+  <meta property="og:image" content="https://imaadkhan.com/berlin-ramadan-iftar/og-image.png">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Berlin Iftar Project | Find Iftar Locations">
+  <meta name="twitter:description" content="Discover iftar spots across Berlin during Ramadan. Community-contributed map showing mosques offering free iftar meals.">
+  
+  <!-- Schema.org structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Berlin Iftar Project",
+    "description": "Interactive map helping Berlin residents find iftar locations during Ramadan. Community-contributed data showing mosques that offer free iftar meals.",
+    "url": "https://imaadkhan.com/berlin-ramadan-iftar/",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Web Browser",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "EUR"
+    },
+    "creator": {
+      "@type": "Person",
+      "name": "Imaad Mohamed Khan"
+    }
+  }
+  </script>
+  
+  <link rel="canonical" href="https://imaadkhan.com/berlin-ramadan-iftar/">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -19,19 +59,29 @@
 <body class="min-h-screen flex flex-col">
   <header class="bg-emerald-700 text-white py-4 px-6 shadow-lg">
     <div class="max-w-4xl mx-auto flex justify-between items-center flex-wrap gap-2">
-      <h1 class="text-xl md:text-2xl font-bold">Berlin Ramadan Iftar Map</h1>
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold">Berlin Iftar Project</h1>
+        <p class="text-sm text-emerald-100">Find iftar at a mosque near you</p>
+      </div>
       <p class="text-sm text-emerald-100">Data Last Updated: <span id="lastUpdated">Loading...</span></p>
     </div>
   </header>
 
   <main class="flex-1 relative">
-    <div id="map" class="h-[calc(100vh-120px)] md:h-[calc(100vh-80px)]"></div>
+    <div id="map" class="h-[calc(100vh-160px)] md:h-[calc(100vh-80px)]"></div>
     <div class="absolute top-4 left-4 right-4 md:left-auto md:right-4 md:w-64 z-[1000] bg-white rounded-lg shadow-lg p-3 space-y-3">
+      <button onclick="toggleFilters()" class="md:hidden w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium flex justify-between items-center">
+        <span>Filters</span>
+        <span id="filterToggleIcon">▼</span>
+      </button>
+      <div id="filterContent" class="space-y-3 hidden md:block">
+        <button onclick="resetFilters()" class="w-full px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+          Deselect All
+        </button>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">I am in</label>
         <select id="bezirkSelect" onchange="zoomToBezirk(this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
           <option value="">Select area...</option>
-          <option value="52.50,13.28">Charlottenburg-Wilmersdorf</option>
           <option value="52.50,13.45">Friedrichshain-Kreuzberg</option>
           <option value="52.52,13.48">Lichtenberg</option>
           <option value="52.54,13.20">Spandau</option>
@@ -42,7 +92,8 @@
           <option value="52.59,13.33">Reinickendorf</option>
           <option value="52.48,13.35">Tempelhof-Schöneberg</option>
           <option value="52.52,13.37">Tiergarten</option>
-          <option value="52.52,13.31">Charlottenburg</option>
+          <option value="52.55,13.35">Wedding</option>
+          <option value="52.514,13.29">Charlottenburg</option>
         </select>
       </div>
       <div>
@@ -71,16 +122,59 @@
           <option value="">All cuisines</option>
         </select>
       </div>
+      <div id="resultCount" class="text-sm text-gray-600 font-medium text-center py-1"></div>
+      </div>
     </div>
   </main>
 
-  <footer class="bg-gray-800 text-gray-300 py-3 px-6">
-    <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm flex-wrap gap-2 text-center md:text-left">
+  <footer class="bg-gray-800 text-gray-300 py-3 px-4 fixed bottom-0 w-full z-[1001]">
+    <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center text-xs md:text-sm flex-wrap gap-2 text-center">
       <p>Tap a pin to see iftar details</p>
-      <p>Made with ❤️ in Berlin by Imaad Mohamed Khan and AI 🤖</p>
+      <button onclick="showDisclaimer()" class="text-emerald-400 hover:text-emerald-300 underline cursor-pointer">⚠️ Disclaimer</button>
       <a href="https://forms.gle/kzLKXBWPFdQGiAwWA" target="_blank" class="text-emerald-400 hover:text-emerald-300 underline">Contribute a location</a>
+      <p>Made with ❤️ in Berlin by <a href="https://in.linkedin.com/in/imaad-mohamed-khan-218b3999" target="_blank" class="text-emerald-400 hover:text-emerald-300">Imaad Mohamed Khan</a> and AI 🤖</p>
     </div>
   </footer>
+
+  <div id="disclaimerModal" class="fixed inset-0 bg-black bg-opacity-50 z-[2000] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-5">
+      <div class="flex justify-between items-start mb-3">
+        <h3 class="text-lg font-bold text-gray-800">Disclaimer</h3>
+        <button onclick="hideDisclaimer()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
+      </div>
+      <p class="text-sm text-gray-600 leading-relaxed">
+        Information provided based on crowd sourced data. We do not guarantee the availability of iftar in any mosque. Please make your own decision or contact the mosque administration before deciding to be there for iftar.
+      </p>
+      <button onclick="hideDisclaimer()" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-medium">I Understand</button>
+    </div>
+  </div>
+
+  <script>
+    function showDisclaimer() {
+      document.getElementById('disclaimerModal').classList.remove('hidden');
+    }
+    function hideDisclaimer() {
+      document.getElementById('disclaimerModal').classList.add('hidden');
+      localStorage.setItem('disclaimerShown', 'true');
+    }
+
+    // Show disclaimer on first visit
+    if (!localStorage.getItem('disclaimerShown')) {
+      setTimeout(showDisclaimer, 500);
+    }
+
+    function toggleFilters() {
+      const content = document.getElementById('filterContent');
+      const icon = document.getElementById('filterToggleIcon');
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.textContent = '▼';
+      } else {
+        content.classList.add('hidden');
+        icon.textContent = '▶';
+      }
+    }
+  </script>
 
   <script>
     // === CONFIGURATION ===
@@ -121,62 +215,165 @@
       `;
     }
 
-    function populateCuisineFilter() {
-      const cuisines = [...new Set(allMosques.map(m => m.cuisine).filter(c => c))].sort();
-      const select = document.getElementById('cuisineFilter');
-      cuisines.forEach(cuisine => {
-        const option = document.createElement('option');
-        option.value = cuisine;
-        option.textContent = cuisine;
-        select.appendChild(option);
-      });
-    }
-
-    function populateMosqueFilter() {
-      const select = document.getElementById('mosqueSelect');
-      allMosques
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .forEach(mosque => {
-          const option = document.createElement('option');
-          option.value = `${mosque.lat},${mosque.lng}`;
-          option.textContent = mosque.name;
-          select.appendChild(option);
-        });
-    }
-
     function zoomToMosque(value) {
       if (!value) return;
       const [lat, lng] = value.split(',').map(Number);
       map.setView([lat, lng], 16);
+      
+      // Auto-filter dropdowns to match selected mosque
+      const selectedMosque = allMosques.find(m => `${m.lat},${m.lng}` === value);
+      if (selectedMosque) {
+        document.getElementById('dayFilter').value = selectedMosque.days;
+        document.getElementById('cuisineFilter').value = selectedMosque.cuisine;
+      }
+      
       applyFilters();
     }
 
+    const AREA_BOUNDS = {
+      '52.50,13.28': { lat: 52.50, lng: 13.28, radius: 0.03 },
+      '52.50,13.45': { lat: 52.50, lng: 13.45, radius: 0.03 },
+      '52.52,13.48': { lat: 52.52, lng: 13.48, radius: 0.03 },
+      '52.54,13.20': { lat: 52.54, lng: 13.20, radius: 0.03 },
+      '52.53,13.38': { lat: 52.53, lng: 13.38, radius: 0.03 },
+      '52.48,13.43': { lat: 52.48, lng: 13.43, radius: 0.03 },
+      '52.57,13.40': { lat: 52.57, lng: 13.40, radius: 0.03 },
+      '52.43,13.25': { lat: 52.43, lng: 13.25, radius: 0.03 },
+      '52.59,13.33': { lat: 52.59, lng: 13.33, radius: 0.03 },
+      '52.48,13.35': { lat: 52.48, lng: 13.35, radius: 0.03 },
+      '52.52,13.37': { lat: 52.52, lng: 13.37, radius: 0.03 },
+      '52.52,13.31': { lat: 52.52, lng: 13.31, radius: 0.03 }
+    };
+
+    function isInArea(lat, lng, areaKey) {
+      const area = AREA_BOUNDS[areaKey];
+      if (!area) return true;
+      const distance = Math.sqrt(Math.pow(lat - area.lat, 2) + Math.pow(lng - area.lng, 2));
+      return distance <= area.radius;
+    }
+
     function applyFilters() {
+      if (!allMosques || allMosques.length === 0) return;
+      
       const dayFilter = document.getElementById('dayFilter').value;
       const cuisineFilter = document.getElementById('cuisineFilter').value;
-
-      markerGroup.clearLayers();
+      const mosqueSelect = document.getElementById('mosqueSelect');
+      const selectedMosque = mosqueSelect.value;
+      const bezirkSelect = document.getElementById('bezirkSelect');
+      const areaFilter = bezirkSelect.value;
 
       const filtered = allMosques.filter(mosque => {
         const dayMatch = !dayFilter || 
           mosque.days.toLowerCase().includes(dayFilter.toLowerCase()) || 
           mosque.days.toLowerCase() === 'daily';
         const cuisineMatch = !cuisineFilter || mosque.cuisine === cuisineFilter;
-        return dayMatch && cuisineMatch;
+        const mosqueMatch = !selectedMosque || `${mosque.lat},${mosque.lng}` === selectedMosque;
+        const areaMatch = !areaFilter || isInArea(mosque.lat, mosque.lng, areaFilter);
+        return dayMatch && cuisineMatch && mosqueMatch && areaMatch;
       });
 
+      markerGroup.clearLayers();
       filtered.forEach(mosque => {
         L.marker([mosque.lat, mosque.lng], { icon: mosqueIcon })
           .addTo(markerGroup)
           .bindPopup(createPopupContent(mosque));
       });
+
+      document.getElementById('resultCount').textContent = filtered.length === 1 
+        ? '1 mosque found' 
+        : `${filtered.length} mosques found`;
+
+      // Only cascade dropdowns if no specific mosque is selected
+      if (!selectedMosque) {
+        updateDropdownOptions(filtered);
+      } else {
+        // Even when mosque is selected, update cuisines dropdown for consistency
+        const cuisines = [...new Set(allMosques.map(m => m.cuisine).filter(c => c))].sort();
+        const cuisineSelect = document.getElementById('cuisineFilter');
+        const currentCuisineValue = cuisineSelect.value;
+        cuisineSelect.innerHTML = '<option value="">All cuisines</option>';
+        cuisines.forEach(cuisine => {
+          const option = document.createElement('option');
+          option.value = cuisine;
+          option.textContent = cuisine;
+          cuisineSelect.appendChild(option);
+        });
+        if (currentCuisineValue && cuisines.includes(currentCuisineValue)) {
+          cuisineSelect.value = currentCuisineValue;
+        }
+      }
+      updateURLParams();
+    }
+
+    function updateDropdownOptions(filteredMosques) {
+      const mosqueSelect = document.getElementById('mosqueSelect');
+      const cuisineSelect = document.getElementById('cuisineFilter');
+      const daySelect = document.getElementById('dayFilter');
+      const currentMosqueValue = mosqueSelect.value;
+      const currentCuisineValue = cuisineSelect.value;
+      const currentDayValue = daySelect.value;
+
+      mosqueSelect.innerHTML = '<option value="">All mosques...</option>';
+      filteredMosques
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(mosque => {
+          const option = document.createElement('option');
+          option.value = `${mosque.lat},${mosque.lng}`;
+          option.textContent = mosque.name;
+          mosqueSelect.appendChild(option);
+        });
+
+      const cuisines = [...new Set(filteredMosques.map(m => m.cuisine).filter(c => c))].sort();
+      cuisineSelect.innerHTML = '<option value="">All cuisines</option>';
+      cuisines.forEach(cuisine => {
+        const option = document.createElement('option');
+        option.value = cuisine;
+        option.textContent = cuisine;
+        cuisineSelect.appendChild(option);
+      });
+
+      if (currentMosqueValue) {
+        const hasValue = filteredMosques.some(m => `${m.lat},${m.lng}` === currentMosqueValue);
+        mosqueSelect.value = hasValue ? currentMosqueValue : '';
+      }
+      if (currentCuisineValue) {
+        const hasValue = cuisines.includes(currentCuisineValue);
+        cuisineSelect.value = hasValue ? currentCuisineValue : '';
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('bezirkSelect').value = '';
+      document.getElementById('mosqueSelect').value = '';
+      document.getElementById('dayFilter').value = '';
+      document.getElementById('cuisineFilter').value = '';
+      
+      map.setView([52.52, 13.405], 12);
+      
+      markerGroup.clearLayers();
+      allMosques.forEach(mosque => {
+        L.marker([mosque.lat, mosque.lng], { icon: mosqueIcon })
+          .addTo(markerGroup)
+          .bindPopup(createPopupContent(mosque));
+      });
+
+      document.getElementById('resultCount').textContent = allMosques.length === 1 
+        ? '1 mosque found' 
+        : `${allMosques.length} mosques found`;
+
+      updateDropdownOptions(allMosques);
+      updateURLParams();
     }
 
     function zoomToBezirk(value) {
-      if (!value) return;
+      if (!value) {
+        applyFilters();
+        return;
+      }
       const [lat, lng] = value.split(',').map(Number);
       map.setView([lat, lng], 14);
+      applyFilters();
     }
 
     function parseCSVLine(line) {
@@ -240,12 +437,60 @@
           ? latestDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
           : new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-        populateCuisineFilter();
-        populateMosqueFilter();
-        applyFilters();
+        updateDropdownOptions(allMosques);
+        
+        // Show all markers by default
+        markerGroup.clearLayers();
+        allMosques.forEach(mosque => {
+          L.marker([mosque.lat, mosque.lng], { icon: mosqueIcon })
+            .addTo(markerGroup)
+            .bindPopup(createPopupContent(mosque));
+        });
+        document.getElementById('resultCount').textContent = allMosques.length === 1 
+          ? '1 mosque found' 
+          : `${allMosques.length} mosques found`;
+        
+        // Then check URL params and apply filters if present
+        loadURLParams();
       } catch (e) {
         console.error('Error loading data:', e);
         document.getElementById('lastUpdated').textContent = 'Error loading data';
+      }
+    }
+
+    function updateURLParams() {
+      const params = new URLSearchParams();
+      const day = document.getElementById('dayFilter').value;
+      const cuisine = document.getElementById('cuisineFilter').value;
+      const area = document.getElementById('bezirkSelect').value;
+      
+      if (day) params.set('day', day);
+      if (cuisine) params.set('cuisine', cuisine);
+      if (area) params.set('area', area);
+      
+      const newURL = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+      window.history.replaceState({}, '', newURL);
+    }
+
+    function loadURLParams() {
+      const params = new URLSearchParams(window.location.search);
+      let hasFilters = false;
+      
+      if (params.has('day')) {
+        document.getElementById('dayFilter').value = params.get('day');
+        hasFilters = true;
+      }
+      if (params.has('cuisine')) {
+        document.getElementById('cuisineFilter').value = params.get('cuisine');
+        hasFilters = true;
+      }
+      if (params.has('area')) {
+        document.getElementById('bezirkSelect').value = params.get('area');
+        hasFilters = true;
+      }
+      
+      if (hasFilters && allMosques.length > 0) {
+        applyFilters();
       }
     }
 
