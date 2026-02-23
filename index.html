@@ -61,9 +61,15 @@
     <div class="max-w-4xl mx-auto flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl md:text-2xl font-bold">Berlin Iftar Project</h1>
-        <p class="text-sm text-emerald-100">Find iftar at a mosque near you</p>
+        <p class="text-sm text-emerald-100" data-i18n="tagline">Find iftar at a mosque near you</p>
       </div>
-      <p class="text-sm text-emerald-100">Data Last Updated: <span id="lastUpdated">Loading...</span></p>
+      <div class="flex items-center gap-4">
+        <p class="text-sm text-emerald-100"><span data-i18n="lastUpdated">Data Last Updated</span>: <span id="lastUpdated">Loading...</span></p>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-emerald-100" data-i18n="language">Language:</span>
+          <button onclick="toggleLanguage()" id="langToggle" class="text-sm bg-emerald-800 hover:bg-emerald-900 px-2 py-1 rounded">English</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -71,17 +77,17 @@
     <div id="map" class="h-[calc(100vh-160px)] md:h-[calc(100vh-80px)]"></div>
     <div class="absolute top-4 left-4 right-4 md:left-auto md:right-4 md:w-64 z-[1000] bg-white rounded-lg shadow-lg p-3 space-y-3">
       <button onclick="toggleFilters()" class="md:hidden w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium flex justify-between items-center">
-        <span>Filters</span>
+        <span data-i18n="filters">Filters</span>
         <span id="filterToggleIcon">▼</span>
       </button>
       <div id="filterContent" class="space-y-3 hidden md:block">
-        <button onclick="resetFilters()" class="w-full px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+        <button onclick="resetFilters()" class="w-full px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors" data-i18n="deselectAll">
           Deselect All
         </button>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">I am in</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="iAmIn">I am in</label>
         <select id="bezirkSelect" onchange="zoomToBezirk(this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
-          <option value="">Select area...</option>
+          <option value="" data-i18n="selectArea">Select area...</option>
           <option value="52.50,13.45">Friedrichshain-Kreuzberg</option>
           <option value="52.52,13.48">Lichtenberg</option>
           <option value="52.54,13.20">Spandau</option>
@@ -97,15 +103,15 @@
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Select Mosque</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="selectMosque">Select Mosque</label>
         <select id="mosqueSelect" onchange="zoomToMosque(this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
-          <option value="">All mosques...</option>
+          <option value="" data-i18n="allMosques">All mosques...</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Day</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="day">Day</label>
         <select id="dayFilter" onchange="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
-          <option value="">All days</option>
+          <option value="" data-i18n="allDays">All days</option>
           <option value="Daily">Daily</option>
           <option value="Monday">Monday</option>
           <option value="Tuesday">Tuesday</option>
@@ -117,9 +123,9 @@
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Cuisine</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="cuisine">Cuisine</label>
         <select id="cuisineFilter" onchange="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm">
-          <option value="">All cuisines</option>
+          <option value="" data-i18n="allCuisines">All cuisines</option>
         </select>
       </div>
       <div id="resultCount" class="text-sm text-gray-600 font-medium text-center py-1"></div>
@@ -129,27 +135,109 @@
 
   <footer class="bg-gray-800 text-gray-300 py-3 px-4 fixed bottom-0 w-full z-[1001]">
     <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center text-xs md:text-sm flex-wrap gap-2 text-center">
-      <p>Tap a pin to see iftar details</p>
-      <button onclick="showDisclaimer()" class="text-emerald-400 hover:text-emerald-300 underline cursor-pointer">⚠️ Disclaimer</button>
-      <a href="https://forms.gle/kzLKXBWPFdQGiAwWA" target="_blank" class="text-emerald-400 hover:text-emerald-300 underline">Contribute a location</a>
-      <p>Made with ❤️ in Berlin by <a href="https://in.linkedin.com/in/imaad-mohamed-khan-218b3999" target="_blank" class="text-emerald-400 hover:text-emerald-300">Imaad Mohamed Khan</a> and AI 🤖</p>
+      <p data-i18n="tapPin">Tap a pin to see iftar details</p>
+      <button onclick="showDisclaimer()" class="text-emerald-400 hover:text-emerald-300 underline cursor-pointer" data-i18n="disclaimer">⚠️ Disclaimer</button>
+      <a href="https://forms.gle/kzLKXBWPFdQGiAwWA" target="_blank" class="text-emerald-400 hover:text-emerald-300 underline" data-i18n="contribute">Contribute a location</a>
+      <p data-i18n="madeWith">Made with ❤️ in Berlin by <a href="https://in.linkedin.com/in/imaad-mohamed-khan-218b3999" target="_blank" class="text-emerald-400 hover:text-emerald-300">Imaad Mohamed Khan</a> and AI 🤖</p>
     </div>
   </footer>
 
   <div id="disclaimerModal" class="fixed inset-0 bg-black bg-opacity-50 z-[2000] hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-5">
       <div class="flex justify-between items-start mb-3">
-        <h3 class="text-lg font-bold text-gray-800">Disclaimer</h3>
+        <h3 class="text-lg font-bold text-gray-800" data-i18n="disclaimerTitle">Disclaimer</h3>
         <button onclick="hideDisclaimer()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
       </div>
-      <p class="text-sm text-gray-600 leading-relaxed">
+      <p class="text-sm text-gray-600 leading-relaxed" data-i18n="disclaimerText">
         Information provided based on crowd sourced data. We do not guarantee the availability of iftar in any mosque. Please make your own decision or contact the mosque administration before deciding to be there for iftar.
       </p>
-      <button onclick="hideDisclaimer()" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-medium">I Understand</button>
+      <button onclick="hideDisclaimer()" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-medium" data-i18n="iUnderstand">I Understand</button>
     </div>
   </div>
 
   <script>
+    const translations = {
+      en: {
+        language: "Language:",
+        tagline: "Find iftar at a mosque near you",
+        lastUpdated: "Data Last Updated",
+        filters: "Filters",
+        deselectAll: "Deselect All",
+        iAmIn: "I am in",
+        selectArea: "Select area...",
+        selectMosque: "Select Mosque",
+        allMosques: "All mosques...",
+        day: "Day",
+        allDays: "All days",
+        cuisine: "Cuisine",
+        allCuisines: "All cuisines",
+        tapPin: "Tap a pin to see iftar details",
+        disclaimer: "⚠️ Disclaimer",
+        contribute: "Contribute a location",
+        madeWith: "Made with ❤️ in Berlin by <a href=\"https://in.linkedin.com/in/imaad-mohamed-khan-218b3999\" target=\"_blank\" class=\"text-emerald-400 hover:text-emerald-300\">Imaad Mohamed Khan</a> and AI 🤖",
+        disclaimerTitle: "Disclaimer",
+        disclaimerText: "Information provided based on crowd sourced data. We do not guarantee the availability of iftar in any mosque. Please make your own decision or contact the mosque administration before deciding to be there for iftar.",
+        iUnderstand: "I Understand",
+        openInMaps: "Open in Maps",
+        iftarDays: "Iftar Days",
+        typicalFood: "Typical Food",
+        mosqueFound: "mosque found",
+        mosquesFound: "mosques found"
+      },
+      de: {
+        language: "Sprache:",
+        tagline: "Finde Iftar in einer Moschee in deiner Nähe",
+        lastUpdated: "Daten zuletzt aktualisiert",
+        filters: "Filter",
+        deselectAll: "Auswahl aufheben",
+        iAmIn: "Ich bin in",
+        selectArea: "Bereich auswählen...",
+        selectMosque: "Moschee auswählen",
+        allMosques: "Alle Moscheen...",
+        day: "Tag",
+        allDays: "Alle Tage",
+        cuisine: "Küche",
+        allCuisines: "Alle Küchen",
+        tapPin: "Tippe auf einen Pin für Iftar-Details",
+        disclaimer: "⚠️ Haftungsausschluss",
+        contribute: "Ort hinzufügen",
+        madeWith: "Mit ❤️ in Berlin gemacht von <a href=\"https://in.linkedin.com/in/imaad-mohamed-khan-218b3999\" target=\"_blank\" class=\"text-emerald-400 hover:text-emerald-300\">Imaad Mohamed Khan</a> und KI 🤖",
+        disclaimerTitle: "Haftungsausschluss",
+        disclaimerText: "Die Informationen basieren auf crowdsourced Daten. Wir garantieren nicht die Verfügbarkeit von Iftar in irgendeiner Moschee. Bitte treffen Sie Ihre eigene Entscheidung oder kontaktieren Sie die Moschee-Verwaltung, bevor Sie sich für Iftar dort aufhalten.",
+        iUnderstand: "Ich verstehe",
+        openInMaps: "In Maps öffnen",
+        iftarDays: "Iftar-Tage",
+        typicalFood: "Typisches Essen",
+        mosqueFound: "Moschee gefunden",
+        mosquesFound: "Moscheen gefunden"
+      }
+    };
+
+    let currentLang = localStorage.getItem('lang') || 'en';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('lang', lang);
+      document.getElementById('langToggle').textContent = lang === 'en' ? 'English' : 'Deutsch';
+      
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang][key]) {
+          if (key === 'madeWith') {
+            el.innerHTML = translations[lang][key];
+          } else {
+            el.textContent = translations[lang][key];
+          }
+        }
+      });
+      
+      updateResultCount();
+    }
+
+    function toggleLanguage() {
+      setLanguage(currentLang === 'en' ? 'de' : 'en');
+    }
+
     function showDisclaimer() {
       document.getElementById('disclaimerModal').classList.remove('hidden');
     }
@@ -198,17 +286,22 @@
     let allMosques = [];
     const markerGroup = L.layerGroup().addTo(map);
 
+    function updateResultCount(count) {
+      const text = count === 1 ? translations[currentLang].mosqueFound : translations[currentLang].mosquesFound;
+      document.getElementById('resultCount').textContent = count === 1 ? `1 ${text}` : `${count} ${text}`;
+    }
+
     function createPopupContent(mosque) {
       const mapsLink = mosque.googleMapsUrl ? 
-        `<p><span class="font-semibold">📍 Google Maps:</span> <a href="${mosque.googleMapsUrl}" target="_blank" class="text-emerald-600 underline hover:text-emerald-800">Open in Maps</a></p>` : '';
+        `<p><span class="font-semibold">📍 Google Maps:</span> <a href="${mosque.googleMapsUrl}" target="_blank" class="text-emerald-600 underline hover:text-emerald-800">${translations[currentLang].openInMaps}</a></p>` : '';
 
       return `
         <div class="p-3 min-w-[220px] md:min-w-[200px]">
           <h3 class="font-bold text-lg text-emerald-800 mb-2">${mosque.name}</h3>
           <div class="space-y-2 text-sm md:text-base">
-            <p><span class="font-semibold">📅 Iftar Days:</span> ${mosque.days}</p>
-            <p><span class="font-semibold">🍽️ Cuisine:</span> ${mosque.cuisine}</p>
-            <p><span class="font-semibold">🍲 Typical Food:</span> ${mosque.food}</p>
+            <p><span class="font-semibold">📅 ${translations[currentLang].iftarDays}:</span> ${mosque.days}</p>
+            <p><span class="font-semibold">🍽️ ${translations[currentLang].cuisine}:</span> ${mosque.cuisine}</p>
+            <p><span class="font-semibold">🍲 ${translations[currentLang].typicalFood}:</span> ${mosque.food}</p>
             ${mapsLink}
           </div>
         </div>
@@ -279,9 +372,7 @@
           .bindPopup(createPopupContent(mosque));
       });
 
-      document.getElementById('resultCount').textContent = filtered.length === 1 
-        ? '1 mosque found' 
-        : `${filtered.length} mosques found`;
+      updateResultCount(filtered.length);
 
       // Only cascade dropdowns if no specific mosque is selected
       if (!selectedMosque) {
@@ -291,7 +382,7 @@
         const cuisines = [...new Set(allMosques.map(m => m.cuisine).filter(c => c))].sort();
         const cuisineSelect = document.getElementById('cuisineFilter');
         const currentCuisineValue = cuisineSelect.value;
-        cuisineSelect.innerHTML = '<option value="">All cuisines</option>';
+        cuisineSelect.innerHTML = `<option value="">${translations[currentLang].allCuisines}</option>`;
         cuisines.forEach(cuisine => {
           const option = document.createElement('option');
           option.value = cuisine;
@@ -313,7 +404,7 @@
       const currentCuisineValue = cuisineSelect.value;
       const currentDayValue = daySelect.value;
 
-      mosqueSelect.innerHTML = '<option value="">All mosques...</option>';
+      mosqueSelect.innerHTML = `<option value="">${translations[currentLang].allMosques}</option>`;
       filteredMosques
         .slice()
         .sort((a, b) => a.name.localeCompare(b.name))
@@ -325,7 +416,7 @@
         });
 
       const cuisines = [...new Set(filteredMosques.map(m => m.cuisine).filter(c => c))].sort();
-      cuisineSelect.innerHTML = '<option value="">All cuisines</option>';
+      cuisineSelect.innerHTML = `<option value="">${translations[currentLang].allCuisines}</option>`;
       cuisines.forEach(cuisine => {
         const option = document.createElement('option');
         option.value = cuisine;
@@ -358,9 +449,7 @@
           .bindPopup(createPopupContent(mosque));
       });
 
-      document.getElementById('resultCount').textContent = allMosques.length === 1 
-        ? '1 mosque found' 
-        : `${allMosques.length} mosques found`;
+      updateResultCount(allMosques.length);
 
       updateDropdownOptions(allMosques);
       updateURLParams();
@@ -446,9 +535,7 @@
             .addTo(markerGroup)
             .bindPopup(createPopupContent(mosque));
         });
-        document.getElementById('resultCount').textContent = allMosques.length === 1 
-          ? '1 mosque found' 
-          : `${allMosques.length} mosques found`;
+        updateResultCount(allMosques.length);
         
         // Then check URL params and apply filters if present
         loadURLParams();
@@ -495,6 +582,7 @@
     }
 
     loadMosqueData();
+    setLanguage(currentLang);
   </script>
 </body>
 </html>
