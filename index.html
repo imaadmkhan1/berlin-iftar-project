@@ -181,6 +181,9 @@
         openInMaps: "Open in Maps",
         iftarDays: "Iftar Days",
         typicalFood: "Typical Food",
+        womenFacility: "Women Facility",
+        additionalComments: "Additional Comments",
+        lastUpdatedAt: "Last Updated",
         mosqueFound: "mosque found",
         mosquesFound: "mosques found"
       },
@@ -208,6 +211,9 @@
         openInMaps: "In Maps öffnen",
         iftarDays: "Iftar-Tage",
         typicalFood: "Typisches Essen",
+        womenFacility: "Einrichtung für Frauen",
+        additionalComments: "Zusätzliche Kommentare",
+        lastUpdatedAt: "Zuletzt aktualisiert",
         mosqueFound: "Moschee gefunden",
         mosquesFound: "Moscheen gefunden"
       }
@@ -295,6 +301,15 @@
       const mapsLink = mosque.googleMapsUrl ? 
         `<p><span class="font-semibold">📍 Google Maps:</span> <a href="${mosque.googleMapsUrl}" target="_blank" class="text-emerald-600 underline hover:text-emerald-800">${translations[currentLang].openInMaps}</a></p>` : '';
 
+      const womenFacility = mosque.womenFacility ? 
+        `<p><span class="font-semibold">👩 ${translations[currentLang].womenFacility}:</span> ${mosque.womenFacility}</p>` : '';
+
+      const additionalComments = mosque.additionalComments ? 
+        `<p><span class="font-semibold">📝 ${translations[currentLang].additionalComments}:</span> ${mosque.additionalComments}</p>` : '';
+
+      const lastUpdated = mosque.mosqueLastUpdatedAt ? 
+        `<p><span class="font-semibold">🕒 ${translations[currentLang].lastUpdatedAt}:</span> ${mosque.mosqueLastUpdatedAt}</p>` : '';
+
       return `
         <div class="p-3 min-w-[220px] md:min-w-[200px]">
           <h3 class="font-bold text-lg text-emerald-800 mb-2">${mosque.name}</h3>
@@ -302,7 +317,10 @@
             <p><span class="font-semibold">📅 ${translations[currentLang].iftarDays}:</span> ${mosque.days}</p>
             <p><span class="font-semibold">🍽️ ${translations[currentLang].cuisine}:</span> ${mosque.cuisine}</p>
             <p><span class="font-semibold">🍲 ${translations[currentLang].typicalFood}:</span> ${mosque.food}</p>
+            ${womenFacility}
+            ${additionalComments}
             ${mapsLink}
+            ${lastUpdated}
           </div>
         </div>
       `;
@@ -356,9 +374,10 @@
       const areaFilter = bezirkSelect.value;
 
       const filtered = allMosques.filter(mosque => {
+        const mosqueDays = mosque.days.toLowerCase();
         const dayMatch = !dayFilter || 
-          mosque.days.toLowerCase().includes(dayFilter.toLowerCase()) || 
-          mosque.days.toLowerCase() === 'daily';
+          mosqueDays.includes('daily') || 
+          mosqueDays.includes(dayFilter.toLowerCase());
         const cuisineMatch = !cuisineFilter || mosque.cuisine === cuisineFilter;
         const mosqueMatch = !selectedMosque || `${mosque.lat},${mosque.lng}` === selectedMosque;
         const areaMatch = !areaFilter || isInArea(mosque.lat, mosque.lng, areaFilter);
@@ -495,8 +514,8 @@
 
         for (let i = 1; i < lines.length; i++) {
           const values = parseCSVLine(lines[i]);
-          if (values.length >= 8 && values[7]) {
-            const dateStr = values[7].trim();
+          if (values.length >= 10 && values[9]) {
+            const dateStr = values[9].trim();
             const parts = dateStr.split(/[\/\-]/);
             let rowDate;
             if (parts.length === 3) {
@@ -508,7 +527,7 @@
               latestDate = rowDate;
             }
           }
-          if (values.length >= 7 && values[1] && values[2]) {
+          if (values.length >= 10 && values[1] && values[2]) {
             const mosque = {
               name: values[0] || '',
               lat: parseFloat(values[1]) || 0,
@@ -516,7 +535,10 @@
               days: values[3] || '',
               cuisine: values[4] || '',
               food: values[5] || '',
-              googleMapsUrl: values[6] || ''
+              womenFacility: values[6] || '',
+              additionalComments: values[7] || '',
+              googleMapsUrl: values[8] || '',
+              mosqueLastUpdatedAt: values[9] || ''
             };
             allMosques.push(mosque);
           }
