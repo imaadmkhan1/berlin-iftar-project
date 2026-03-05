@@ -54,6 +54,37 @@
     .leaflet-popup-close-button { font-size: 24px !important; width: 36px !important; height: 36px !important; padding: 6px !important; }
     .leaflet-popup-content a { padding: 8px 12px; display: inline-block; margin-top: 4px; background: #ecfdf5; border-radius: 6px; text-decoration: none; }
     @media (pointer: coarse) { .leaflet-popup-close-button { width: 44px !important; height: 44px !important; } }
+    
+    .current-location-marker {
+      position: relative;
+      width: 24px;
+      height: 24px;
+    }
+    .current-location-marker .outer {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background: rgba(66, 133, 244, 0.3);
+      border-radius: 50%;
+      left: 0;
+      top: 0;
+      animation: pulse 2s infinite;
+    }
+    .current-location-marker .inner {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: #4285f4;
+      border: 3px solid white;
+      border-radius: 50%;
+      left: 5px;
+      top: 5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -64,6 +95,13 @@
         <p class="text-sm text-emerald-100" data-i18n="tagline">Find iftar at a mosque near you</p>
       </div>
       <div class="flex items-center gap-4">
+        <button onclick="locateMe()" class="bg-emerald-800 hover:bg-emerald-900 px-3 py-2 rounded-lg flex items-center gap-2 text-sm">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
+          </svg>
+          <span data-i18n="locateMe">Locate Me</span>
+        </button>
         <p class="text-sm text-emerald-100"><span data-i18n="lastUpdated">Data Last Updated</span>: <span id="lastUpdated">Loading...</span></p>
         <div class="flex items-center gap-2">
           <span class="text-sm text-emerald-100" data-i18n="language">Language:</span>
@@ -185,7 +223,8 @@
         additionalComments: "Additional Comments",
         lastUpdatedAt: "Last Updated",
         mosqueFound: "mosque found",
-        mosquesFound: "mosques found"
+        mosquesFound: "mosques found",
+        locateMe: "Locate Me"
       },
       de: {
         language: "Sprache:",
@@ -215,7 +254,8 @@
         additionalComments: "Zusätzliche Kommentare",
         lastUpdatedAt: "Zuletzt aktualisiert",
         mosqueFound: "Moschee gefunden",
-        mosquesFound: "Moscheen gefunden"
+        mosquesFound: "Moscheen gefunden",
+        locateMe: "Orten"
       }
     };
 
@@ -280,6 +320,74 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
+
+    const currentLocationIcon = L.divIcon({
+      className: 'current-location-marker',
+      html: '<div class="outer"></div><div class="inner"></div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+
+    let currentLocationMarker = null;
+    let locationWatchId = null;
+
+    function locateMe() {
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser');
+        return;
+      }
+
+      if (locationWatchId !== null) {
+        navigator.geolocation.clearWatch(locationWatchId);
+        locationWatchId = null;
+        if (currentLocationMarker) {
+          map.removeLayer(currentLocationMarker);
+          currentLocationMarker = null;
+        }
+        return;
+      }
+
+      locationWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          
+          if (currentLocationMarker) {
+            currentLocationMarker.setLatLng([latitude, longitude]);
+          } else {
+            currentLocationMarker = L.marker([latitude, longitude], { 
+              icon: currentLocationIcon,
+              zIndexOffset: 1000,
+              draggable: true
+            }).addTo(map);
+            
+            currentLocationMarker.on('dragend', function(event) {
+              const pos = event.target.getLatLng();
+              console.log('User adjusted position to:', pos.lat, pos.lng);
+            });
+          }
+          
+          if (accuracy > 100) {
+            map.setView([latitude, longitude], 16);
+          } else {
+            map.setView([latitude, longitude], 17);
+          }
+        },
+        (error) => {
+          let message = 'Unable to get your location';
+          if (error.code === error.PERMISSION_DENIED) {
+            message = 'Location permission denied. Please enable location access in your browser settings.';
+          }
+          alert(message);
+          locationWatchId = null;
+        },
+        { 
+          enableHighAccuracy: true, 
+          timeout: 30000,
+          maximumAge: 0,
+          distanceFilter: 5
+        }
+      );
+    }
 
     const mosqueIcon = L.divIcon({
       className: 'custom-marker',
