@@ -102,6 +102,13 @@
           </svg>
           <span data-i18n="locateMe">Locate Me</span>
         </button>
+        <button onclick="findNearestMosque()" class="bg-emerald-800 hover:bg-emerald-900 px-3 py-2 rounded-lg flex items-center gap-2 text-sm">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <span data-i18n="findNearest">Find Nearest Mosque</span>
+        </button>
         <p class="text-sm text-emerald-100"><span data-i18n="lastUpdated">Data Last Updated</span>: <span id="lastUpdated">Loading...</span></p>
         <div class="flex items-center gap-2">
           <span class="text-sm text-emerald-100" data-i18n="language">Language:</span>
@@ -224,7 +231,12 @@
         lastUpdatedAt: "Last Updated",
         mosqueFound: "mosque found",
         mosquesFound: "mosques found",
-        locateMe: "Locate Me"
+        locateMe: "Locate Me",
+        findNearest: "Find Nearest Mosque",
+        nearestMosqueFound: "Nearest mosque found",
+        noMosqueFound: "No mosques found with current filters",
+        locationRequired: "Please locate yourself first",
+        publicTransit: "Public Transit"
       },
       de: {
         language: "Sprache:",
@@ -255,7 +267,12 @@
         lastUpdatedAt: "Zuletzt aktualisiert",
         mosqueFound: "Moschee gefunden",
         mosquesFound: "Moscheen gefunden",
-        locateMe: "Orten"
+        locateMe: "Orten",
+        findNearest: "Nächste Moschee finden",
+        nearestMosqueFound: "Nächste Moschee gefunden",
+        noMosqueFound: "Keine Moscheen mit aktuellen Filtern",
+        locationRequired: "Bitte orten Sie sich zuerst",
+        publicTransit: "Öffentlicher Verkehr"
       }
     };
 
@@ -330,8 +347,11 @@
 
     let currentLocationMarker = null;
     let locationWatchId = null;
+    let firstLocationFix = true;
+    let nearestRouteLine = null;
 
     function locateMe() {
+      console.log('Locate me clicked');
       if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser');
         return;
@@ -340,15 +360,21 @@
       if (locationWatchId !== null) {
         navigator.geolocation.clearWatch(locationWatchId);
         locationWatchId = null;
+        firstLocationFix = true;
         if (currentLocationMarker) {
           map.removeLayer(currentLocationMarker);
           currentLocationMarker = null;
         }
+        if (nearestRouteLine) {
+          map.removeLayer(nearestRouteLine);
+          nearestRouteLine = null;
+        }
         return;
       }
 
-      locationWatchId = navigator.geolocation.watchPosition(
+      navigator.geolocation.getCurrentPosition(
         (position) => {
+          console.log('Position received:', position.coords);
           const { latitude, longitude, accuracy } = position.coords;
           
           if (currentLocationMarker) {
@@ -373,20 +399,135 @@
           }
         },
         (error) => {
+          console.log('Geolocation error:', error);
           let message = 'Unable to get your location';
           if (error.code === error.PERMISSION_DENIED) {
             message = 'Location permission denied. Please enable location access in your browser settings.';
           }
           alert(message);
-          locationWatchId = null;
         },
         { 
           enableHighAccuracy: true, 
           timeout: 30000,
-          maximumAge: 0,
-          distanceFilter: 5
+          maximumAge: 0
         }
       );
+    }
+
+    function handleDirectionsClick(event, googleMapsUrl, lat, lng) {
+      event.preventDefault();
+      
+      let destination = '';
+      
+      if (googleMapsUrl) {
+        const placeMatch = googleMapsUrl.match(/\/place\/([^@]+)\//);
+        if (placeMatch) {
+          destination = placeMatch[1].trim();
+        }
+      }
+      
+      if (!destination) {
+        destination = `${lat},${lng}`;
+      }
+      
+      if (currentLocationMarker) {
+        const pos = currentLocationMarker.getLatLng();
+        window.open(`https://www.google.com/maps/dir/?api=1&origin=${pos.lat},${pos.lng}&destination=${encodeURIComponent(destination)}&travelmode=transit`, '_blank');
+      } else {
+        if (!navigator.geolocation) {
+          window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=transit`, '_blank');
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            
+            currentLocationMarker = L.marker([latitude, longitude], { 
+              icon: currentLocationIcon,
+              zIndexOffset: 1000,
+              draggable: true
+            }).addTo(map);
+            
+            window.open(`https://www.google.com/maps/dir/?api=1&origin=${latitude},${longitude}&destination=${encodeURIComponent(destination)}&travelmode=transit`, '_blank');
+          },
+          (error) => {
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=transit`, '_blank');
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+      }
+    }
+
+    function findNearestMosque() {
+      if (!currentLocationMarker) {
+        alert(translations[currentLang].locationRequired);
+        return;
+      }
+
+      if (nearestRouteLine) {
+        map.removeLayer(nearestRouteLine);
+        nearestRouteLine = null;
+      }
+
+      const dayFilter = document.getElementById('dayFilter').value;
+      const cuisineFilter = document.getElementById('cuisineFilter').value;
+      const bezirkSelect = document.getElementById('bezirkSelect');
+      const areaFilter = bezirkSelect.value;
+
+      const filteredMosques = allMosques.filter(mosque => {
+        const mosqueDays = mosque.days.toLowerCase();
+        const dayMatch = !dayFilter || 
+          mosqueDays.includes('daily') || 
+          mosqueDays.includes(dayFilter.toLowerCase());
+        const cuisineMatch = !cuisineFilter || mosque.cuisine === cuisineFilter;
+        const areaMatch = !areaFilter || isInArea(mosque.lat, mosque.lng, areaFilter);
+        return dayMatch && cuisineMatch && areaMatch;
+      });
+
+      if (filteredMosques.length === 0) {
+        alert(translations[currentLang].noMosqueFound);
+        return;
+      }
+
+      const userLatLng = currentLocationMarker.getLatLng();
+      
+      let nearestMosque = null;
+      let minDistance = Infinity;
+
+      filteredMosques.forEach(mosque => {
+        const distance = userLatLng.distanceTo([mosque.lat, mosque.lng]);
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestMosque = mosque;
+        }
+      });
+
+      if (nearestRouteLine) {
+        map.removeLayer(nearestRouteLine);
+      }
+
+      nearestRouteLine = L.polyline([
+        [userLatLng.lat, userLatLng.lng],
+        [nearestMosque.lat, nearestMosque.lng]
+      ], {
+        color: '#4285f4',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '10, 10',
+        lineCap: 'round'
+      }).addTo(map);
+
+      map.fitBounds(nearestRouteLine.getBounds(), { padding: [50, 50] });
+
+      if (nearestMosque) {
+        const popup = L.popup()
+          .setLatLng([nearestMosque.lat, nearestMosque.lng])
+          .setContent(createPopupContent(nearestMosque))
+          .openOn(map);
+        
+        map.setView([nearestMosque.lat, nearestMosque.lng], 16);
+      }
     }
 
     const mosqueIcon = L.divIcon({
@@ -406,6 +547,9 @@
     }
 
     function createPopupContent(mosque) {
+      const directionsLink = mosque.googleMapsUrl ? 
+        `<p><span class="font-semibold">🧭 Get Directions:</span> <a href="#" onclick="handleDirectionsClick(event, '${mosque.googleMapsUrl}', ${mosque.lat}, ${mosque.lng}); return false;" class="text-blue-600 underline hover:text-blue-800">${translations[currentLang].publicTransit}</a></p>` : '';
+
       const mapsLink = mosque.googleMapsUrl ? 
         `<p><span class="font-semibold">📍 Google Maps:</span> <a href="${mosque.googleMapsUrl}" target="_blank" class="text-emerald-600 underline hover:text-emerald-800">${translations[currentLang].openInMaps}</a></p>` : '';
 
@@ -427,6 +571,7 @@
             <p><span class="font-semibold">🍲 ${translations[currentLang].typicalFood}:</span> ${mosque.food}</p>
             ${womenFacility}
             ${additionalComments}
+            ${directionsLink}
             ${mapsLink}
             ${lastUpdated}
           </div>
