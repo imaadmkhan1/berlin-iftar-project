@@ -88,30 +88,31 @@
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
-  <header class="bg-emerald-700 text-white py-3 px-4 shadow-lg">
+  <header class="bg-emerald-700 text-white py-3 px-4 shadow-lg" style="overflow: visible;">
     <div class="max-w-4xl mx-auto flex justify-between items-center gap-2">
       <div>
         <h1 class="text-lg md:text-2xl font-bold">Berlin Iftar Project</h1>
         <p class="text-xs md:text-sm text-emerald-100" data-i18n="tagline">Find iftar at a mosque near you</p>
       </div>
       <div class="flex items-center gap-2 md:gap-4">
-        <div class="relative group">
-          <button onclick="locateMe()" class="bg-emerald-800 hover:bg-emerald-900 p-2 rounded-lg flex items-center justify-center">
+        <span class="text-xs md:text-sm text-emerald-100 hidden md:inline"><span data-i18n="lastUpdated">Data Last Updated</span>: <span id="lastUpdated">Loading...</span></span>
+        <div class="relative">
+          <button onclick="document.getElementById('tooltip-nearest').classList.add('hidden'); locateMe(); document.getElementById('tooltip-locate').classList.remove('hidden');" class="bg-emerald-800 hover:bg-emerald-900 p-2 rounded-lg flex items-center justify-center">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="3"/>
               <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
             </svg>
           </button>
-          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">Locate Me</span>
+          <span id="tooltip-locate" class="hidden absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-[9999]">Locate Me</span>
         </div>
-        <div class="relative group">
-          <button onclick="findNearestMosque()" class="bg-emerald-800 hover:bg-emerald-900 p-2 rounded-lg flex items-center justify-center">
+        <div class="relative">
+          <button onclick="document.getElementById('tooltip-locate').classList.add('hidden'); findNearestMosque(); document.getElementById('tooltip-nearest').classList.remove('hidden');" class="bg-emerald-800 hover:bg-emerald-900 p-2 rounded-lg flex items-center justify-center">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
               <circle cx="12" cy="10" r="3"/>
             </svg>
           </button>
-          <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">Find Nearest Mosque</span>
+          <span id="tooltip-nearest" class="hidden absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-[9999]">Find Nearest Mosque</span>
         </div>
         <button onclick="toggleLanguage()" id="langToggle" class="text-xs md:text-sm bg-emerald-800 hover:bg-emerald-900 px-2 py-1 rounded">EN</button>
       </div>
@@ -180,7 +181,6 @@
 
   <footer class="bg-gray-800 text-gray-300 py-3 px-4 fixed bottom-0 w-full z-[1001]">
     <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center text-xs md:text-sm flex-wrap gap-2 text-center">
-      <p class="text-emerald-400"><span data-i18n="lastUpdated">Data Last Updated</span>: <span id="lastUpdated" class="text-emerald-300">Loading...</span></p>
       <p data-i18n="tapPin">Tap a pin to see iftar details</p>
       <button onclick="showDisclaimer()" class="text-emerald-400 hover:text-emerald-300 underline cursor-pointer" data-i18n="disclaimer">⚠️ Disclaimer</button>
       <a href="https://forms.gle/kzLKXBWPFdQGiAwWA" target="_blank" class="text-emerald-400 hover:text-emerald-300 underline" data-i18n="contribute">Contribute a location</a>
@@ -508,18 +508,7 @@
         map.removeLayer(nearestRouteLine);
       }
 
-      nearestRouteLine = L.polyline([
-        [userLatLng.lat, userLatLng.lng],
-        [nearestMosque.lat, nearestMosque.lng]
-      ], {
-        color: '#4285f4',
-        weight: 4,
-        opacity: 0.8,
-        dashArray: '10, 10',
-        lineCap: 'round'
-      }).addTo(map);
-
-      map.fitBounds(nearestRouteLine.getBounds(), { padding: [50, 50] });
+      map.fitBounds([[userLatLng.lat, userLatLng.lng], [nearestMosque.lat, nearestMosque.lng]], { padding: [50, 50] });
 
       if (nearestMosque) {
         const popup = L.popup()
@@ -859,6 +848,13 @@
 
     loadMosqueData();
     setLanguage(currentLang);
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#tooltip-locate') && !e.target.closest('#tooltip-nearest') && !e.target.closest('.relative > button')) {
+        document.getElementById('tooltip-locate').classList.add('hidden');
+        document.getElementById('tooltip-nearest').classList.add('hidden');
+      }
+    });
   </script>
 </body>
 </html>
